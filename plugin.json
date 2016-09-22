@@ -1,0 +1,24 @@
+{
+  "type": "panel",
+  "name": "Breadcrumb",
+  "id": "breadcrumb",
+
+  "info": {
+    "description": "Breadcrumb panel for Grafana",
+    "author": {
+      "name": "Digia"
+    },
+    "keywords": ["breadcrumb", "panel"],
+    "version": "1.0.0",
+    "updated": "2016-09-21"
+  },
+
+  "links": [
+      {"name": "Project site", "url": "https://github.com/digiapulssi/grafana-breadcrumb-panel"}
+  ],
+
+  "dependencies": {
+    "grafanaVersion": "3.x.x",
+    "plugins": [ ]
+  }
+}
