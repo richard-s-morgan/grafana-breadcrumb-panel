@@ -85,21 +85,46 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                     // Check for browser session storage and create one if it doesn't exist
                     if (!sessionStorage.getItem("dashlist")) {
                         sessionStorage.setItem("dashlist", "[]");
+                    }
+                    // Check if URL params has breadcrumb
+                    if ($location.search().breadcrumb) {
+                        var items = $location.search().breadcrumb.split(",");
+                        _this.createDashboardList(items);
                     } else {
+                        // If no URL params are given then get dashboard list from session storage
                         _this.dashboardList = JSON.parse(sessionStorage.getItem("dashlist"));
                     }
                     _this.updateText();
                     return _this;
                 }
                 /**
-                 * Update Breadcrumb items
+                 * Create dashboard items
+                 * @param {string[]} items Array of dashboard ids
                  */
 
 
                 _createClass(BreadcrumbCtrl, [{
+                    key: "createDashboardList",
+                    value: function createDashboardList(items) {
+                        var _this2 = this;
+
+                        var dashIds = impressions.getDashboardOpened();
+                        // Fetch list of all dashboards from Grafana
+                        this.backendSrv.search({ dashboardIds: dashIds, limit: this.panel.limit }).then(function (result) {
+                            _this2.dashboardList = items.map(function (item) {
+                                return {
+                                    url: "dashboard/db/" + item,
+                                    name: _.find(result, { uri: "db/" + item }).title
+                                };
+                            });
+                            // Update session storage
+                            sessionStorage.setItem("dashlist", JSON.stringify(_this2.dashboardList));
+                        });
+                    }
+                }, {
                     key: "updateText",
                     value: function updateText() {
-                        var _this2 = this;
+                        var _this3 = this;
 
                         var dashIds = impressions.getDashboardOpened();
                         // Fetch list of all dashboards from Grafana
@@ -107,12 +132,25 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                             var uri = "db/" + window.location.pathname.split("/").pop();
                             var obj = _.find(result, { uri: uri });
                             // Add current dashboard to breadcrumb if it doesn't exist
-                            if (_.findIndex(_this2.dashboardList, { url: "dashboard/" + uri }) < 0) {
-                                _this2.dashboardList.push({ url: "dashboard/" + uri, name: obj.title });
+                            if (_.findIndex(_this3.dashboardList, { url: "dashboard/" + uri }) < 0) {
+                                _this3.dashboardList.push({ url: "dashboard/" + uri, name: obj.title });
                             }
                             // Update session storage
-                            sessionStorage.setItem("dashlist", JSON.stringify(_this2.dashboardList));
+                            sessionStorage.setItem("dashlist", JSON.stringify(_this3.dashboardList));
+                            _this3.notifyContainerWindow();
                         });
+                    }
+                }, {
+                    key: "notifyContainerWindow",
+                    value: function notifyContainerWindow() {
+                        // Send message to uppper window
+                        var messageObj = {
+                            dashboard: window.location.pathname.split("/").pop(),
+                            breadcrumb: this.dashboardList.map(function (item) {
+                                return item.url.split("/").pop();
+                            })
+                        };
+                        window.top.postMessage(messageObj, "*");
                     }
                 }, {
                     key: "navigate",
@@ -125,6 +163,7 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                             sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
                         }
                         this.windowLocation.path(url);
+                        this.notifyContainerWindow();
                     }
                 }]);
 

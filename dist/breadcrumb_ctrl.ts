@@ -38,10 +38,35 @@ class BreadcrumbCtrl extends PanelCtrl {
         // Check for browser session storage and create one if it doesn't exist
         if (!sessionStorage.getItem("dashlist")) {
             sessionStorage.setItem("dashlist", "[]");
+        }
+        // Check if URL params has breadcrumb
+        if ($location.search().breadcrumb) {
+            const items = $location.search().breadcrumb.split(",");
+            this.createDashboardList(items);
         } else {
+            // If no URL params are given then get dashboard list from session storage
             this.dashboardList = JSON.parse(sessionStorage.getItem("dashlist"));
         }
         this.updateText();
+    }
+
+    /**
+     * Create dashboard items
+     * @param {string[]} items Array of dashboard ids
+     */
+    createDashboardList(items: string[]) {
+        var dashIds = impressions.getDashboardOpened();
+        // Fetch list of all dashboards from Grafana
+        this.backendSrv.search({dashboardIds: dashIds, limit: this.panel.limit}).then((result: any) => {
+            this.dashboardList = items.map((item: string) => {
+                return {
+                    url: "dashboard/db/" + item,
+                    name: _.find(result, { uri: "db/" + item }).title
+                }
+            });
+            // Update session storage
+            sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
+        });
     }
 
     /**
@@ -59,7 +84,20 @@ class BreadcrumbCtrl extends PanelCtrl {
             }
             // Update session storage
             sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
+            this.notifyContainerWindow();
         });
+    }
+
+    /**
+     * Notify container window
+     */
+    notifyContainerWindow() {
+        // Send message to uppper window
+        const messageObj = {
+            dashboard: window.location.pathname.split("/").pop(),
+            breadcrumb: this.dashboardList.map(item => item.url.split("/").pop())
+        }
+        window.top.postMessage(messageObj, "*");
     }
 
     /**
@@ -75,6 +113,7 @@ class BreadcrumbCtrl extends PanelCtrl {
             sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
         }
         this.windowLocation.path(url);
+        this.notifyContainerWindow();
     }
 
 }
