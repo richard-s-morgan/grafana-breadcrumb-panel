@@ -129,8 +129,7 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                         var dashIds = impressions.getDashboardOpened();
                         // Fetch list of all dashboards from Grafana
                         this.backendSrv.search({ dashboardIds: dashIds, limit: this.panel.limit }).then(function (result) {
-                            _this3.currentDashboard = window.location.pathname.split("/").pop();
-                            var uri = "db/" + _this3.currentDashboard;
+                            var uri = "db/" + window.location.pathname.split("/").pop();
                             var obj = _.find(result, { uri: uri });
                             // Add current dashboard to breadcrumb if it doesn't exist
                             if (_.findIndex(_this3.dashboardList, { url: "dashboard/" + uri }) < 0) {
@@ -138,20 +137,7 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                             }
                             // Update session storage
                             sessionStorage.setItem("dashlist", JSON.stringify(_this3.dashboardList));
-                            _this3.notifyContainerWindow();
                         });
-                    }
-                }, {
-                    key: "notifyContainerWindow",
-                    value: function notifyContainerWindow() {
-                        // Send message to uppper window
-                        var messageObj = {
-                            dashboard: window.location.pathname.split("/").pop(),
-                            breadcrumb: this.dashboardList.map(function (item) {
-                                return item.url.split("/").pop();
-                            })
-                        };
-                        window.top.postMessage(messageObj, "*");
                     }
                 }, {
                     key: "navigate",
@@ -164,7 +150,6 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                             sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
                         }
                         this.windowLocation.path(url);
-                        this.notifyContainerWindow();
                     }
                 }]);
 

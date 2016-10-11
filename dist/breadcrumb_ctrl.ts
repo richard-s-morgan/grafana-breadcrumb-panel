@@ -18,7 +18,6 @@ class BreadcrumbCtrl extends PanelCtrl {
         url: string;
         name: string;
     }[];
-    currentDashboard: string;
     windowLocation: ng.ILocationService;
     panel: any;
 
@@ -77,8 +76,7 @@ class BreadcrumbCtrl extends PanelCtrl {
         var dashIds = impressions.getDashboardOpened();
         // Fetch list of all dashboards from Grafana
         this.backendSrv.search({dashboardIds: dashIds, limit: this.panel.limit}).then((result: any) => {
-            this.currentDashboard = window.location.pathname.split("/").pop();
-            var uri = "db/" + this.currentDashboard;
+            var uri = "db/" + window.location.pathname.split("/").pop();
             var obj: any = _.find(result, { uri: uri });
             // Add current dashboard to breadcrumb if it doesn't exist
             if (_.findIndex(this.dashboardList, { url: "dashboard/" + uri }) < 0) {
@@ -86,20 +84,7 @@ class BreadcrumbCtrl extends PanelCtrl {
             }
             // Update session storage
             sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
-            this.notifyContainerWindow();
         });
-    }
-
-    /**
-     * Notify container window
-     */
-    notifyContainerWindow() {
-        // Send message to uppper window
-        const messageObj = {
-            dashboard: window.location.pathname.split("/").pop(),
-            breadcrumb: this.dashboardList.map(item => item.url.split("/").pop())
-        }
-        window.top.postMessage(messageObj, "*");
     }
 
     /**
@@ -115,7 +100,6 @@ class BreadcrumbCtrl extends PanelCtrl {
             sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
         }
         this.windowLocation.path(url);
-        this.notifyContainerWindow();
     }
 
 }
