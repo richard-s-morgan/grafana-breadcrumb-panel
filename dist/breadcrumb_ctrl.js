@@ -129,7 +129,8 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                         var dashIds = impressions.getDashboardOpened();
                         // Fetch list of all dashboards from Grafana
                         this.backendSrv.search({ dashboardIds: dashIds, limit: this.panel.limit }).then(function (result) {
-                            var uri = "db/" + window.location.pathname.split("/").pop();
+                            _this3.currentDashboard = window.location.pathname.split("/").pop();
+                            var uri = "db/" + _this3.currentDashboard;
                             var obj = _.find(result, { uri: uri });
                             // Add current dashboard to breadcrumb if it doesn't exist
                             if (_.findIndex(_this3.dashboardList, { url: "dashboard/" + uri }) < 0) {

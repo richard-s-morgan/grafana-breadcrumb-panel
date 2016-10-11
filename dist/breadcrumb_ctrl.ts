@@ -18,6 +18,7 @@ class BreadcrumbCtrl extends PanelCtrl {
         url: string;
         name: string;
     }[];
+    currentDashboard: string;
     windowLocation: ng.ILocationService;
     panel: any;
 
@@ -76,7 +77,8 @@ class BreadcrumbCtrl extends PanelCtrl {
         var dashIds = impressions.getDashboardOpened();
         // Fetch list of all dashboards from Grafana
         this.backendSrv.search({dashboardIds: dashIds, limit: this.panel.limit}).then((result: any) => {
-            var uri = "db/" + window.location.pathname.split("/").pop();
+            this.currentDashboard = window.location.pathname.split("/").pop();
+            var uri = "db/" + this.currentDashboard;
             var obj: any = _.find(result, { uri: uri });
             // Add current dashboard to breadcrumb if it doesn't exist
             if (_.findIndex(this.dashboardList, { url: "dashboard/" + uri }) < 0) {
