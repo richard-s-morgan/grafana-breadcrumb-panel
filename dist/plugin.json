@@ -1,24 +1,29 @@
 {
-  "type": "panel",
-  "name": "Breadcrumb",
-  "id": "breadcrumb",
+    "type": "panel",
+    "name": "Breadcrumb",
+    "id": "breadcrumb",
 
-  "info": {
-    "description": "Breadcrumb panel for Grafana",
-    "author": {
-      "name": "Digia"
+    "info": {
+        "description": "Breadcrumb Panel for Grafana",
+        "author": {
+            "name": "Digia Finland Ltd"
+        },
+        "keywords": ["breadcrumb", "panel"],
+        "version": "1.0.0",
+        "updated": "2016-10-11",
+        "logos": {
+            "small": "src/img/breadcrumb-icon.svg",
+            "large": "src/img/breadcrumb-icon.svg"
+        },
+        "links": [
+            {"name": "Project site", "url": "https://github.com/digiapulssi/grafana-breadcrumb-panel"}
+        ],
+        "screenshots": [
+            {"name": "Showcase", "path": "src/img/breadcrumb-screenshot.png"}
+        ]
     },
-    "keywords": ["breadcrumb", "panel"],
-    "version": "1.0.0",
-    "updated": "2016-09-21"
-  },
-
-  "links": [
-      {"name": "Project site", "url": "https://github.com/digiapulssi/grafana-breadcrumb-panel"}
-  ],
-
-  "dependencies": {
-    "grafanaVersion": "3.x.x",
-    "plugins": [ ]
-  }
+    "dependencies": {
+        "grafanaVersion": "3.x.x",
+        "plugins": [ ]
+    }
 }
