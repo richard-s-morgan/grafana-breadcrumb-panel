@@ -21,3 +21,10 @@ The compiled product is in ``dist`` folder.
 
 ### Deployment
 Copy the contents of ``dist`` folder to ``plugins/breadcrumb`` folder so Grafana will find the plugin and it can be used in Grafana dashboards.
+
+### Install the Panel
+Use the grafana-cli tool to install Breadcrumb from the commandline:
+```
+grafana-cli plugins install digiapulssi-breadcrumb-panel
+```
+The plugin will be installed into your grafana plugins directory; the default is /var/lib/grafana/plugins.
