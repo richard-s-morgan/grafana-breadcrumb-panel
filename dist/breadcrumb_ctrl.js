@@ -147,9 +147,7 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                         // Send message to uppper window
                         var messageObj = {
                             dashboard: window.location.pathname.split("/").pop(),
-                            breadcrumb: this.dashboardList.map(function (item) {
-                                return item.url.split("/").pop();
-                            })
+                            breadcrumb: this.dashboardList
                         };
                         window.top.postMessage(messageObj, "*");
                     }

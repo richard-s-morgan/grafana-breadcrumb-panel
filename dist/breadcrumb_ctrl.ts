@@ -97,7 +97,7 @@ class BreadcrumbCtrl extends PanelCtrl {
         // Send message to uppper window
         const messageObj = {
             dashboard: window.location.pathname.split("/").pop(),
-            breadcrumb: this.dashboardList.map(item => item.url.split("/").pop())
+            breadcrumb: this.dashboardList
         }
         window.top.postMessage(messageObj, "*");
     }
