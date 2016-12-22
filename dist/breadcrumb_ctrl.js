@@ -95,6 +95,15 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                         _this.dashboardList = JSON.parse(sessionStorage.getItem("dashlist"));
                     }
                     _this.updateText();
+                    // Adding a mechanism for telling parent frame to navigate to new url
+                    // Add listener for route changes: If route has target-parameter then
+                    // tell parent window to navigate to given target
+                    // e.g. setting following url-link in some Grafana dashboard: ?target=/logs
+                    $scope.$on("$routeUpdate", function () {
+                        if ($location.search().target) {
+                            window.parent.location.href = $location.search().target;
+                        }
+                    });
                     return _this;
                 }
                 /**
