@@ -55,7 +55,11 @@ class BreadcrumbCtrl extends PanelCtrl {
         // e.g. setting following url-link in some Grafana dashboard: ?target=/logs
         $scope.$on("$routeUpdate", () => {
             if ($location.search().target) {
-                window.parent.location.href = $location.search().target;
+                const messageObj = {
+                    target: $location.search().target,
+                    params: $location.search().params
+                };
+                window.top.postMessage(messageObj, "*");
             }
         });
     }

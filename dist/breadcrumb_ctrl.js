@@ -101,7 +101,11 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                     // e.g. setting following url-link in some Grafana dashboard: ?target=/logs
                     $scope.$on("$routeUpdate", function () {
                         if ($location.search().target) {
-                            window.parent.location.href = $location.search().target;
+                            var messageObj = {
+                                target: $location.search().target,
+                                params: $location.search().params
+                            };
+                            window.top.postMessage(messageObj, "*");
                         }
                     });
                     return _this;
