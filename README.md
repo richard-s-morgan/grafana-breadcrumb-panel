@@ -23,10 +23,10 @@ The compiled product is in ``dist`` folder.
 Copy the contents of ``dist`` folder to ``plugins/breadcrumb`` folder so Grafana will find the plugin and it can be used in Grafana dashboards.
 
 ### Navigating out of iFrame
-Pulssi uses Grafana inside iFrame. Sending links from Grafana window to parent window can be achieved by creating absolute Grafana link which has no domain but only query with target and params.
-e.g.
+Pulssi uses Grafana inside iFrame. Sending links from Grafana window to parent window can be achieved by creating a Grafana dashboard link to current dashboard and setting query to contain target and params.
+e.g. Set query to
 ```
-?target=logs&params=streams
+target=logs&params=streams
 ```
 So e.g. if parent domain is ``https://demo.pulssi.digia.com`` this will tell parent window to navigate to
 ```
