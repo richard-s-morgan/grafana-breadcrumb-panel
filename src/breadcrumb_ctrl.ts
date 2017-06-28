@@ -62,6 +62,14 @@ class BreadcrumbCtrl extends PanelCtrl {
                 window.top.postMessage(messageObj, "*");
             }
         });
+        console.log("CONFIG: " + JSON.stringify(config.bootData.settings));
+        // Listen for PopState events so we know when user navigates back with browser
+        // On back navigation we need to remove the last item from breadcrumb
+        window.onpopstate = (event: Event) => {
+          this.dashboardList.pop();
+          sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
+          this.notifyContainerWindow();
+        }
     }
 
     /**
