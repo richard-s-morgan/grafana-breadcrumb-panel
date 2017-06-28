@@ -62,13 +62,19 @@ class BreadcrumbCtrl extends PanelCtrl {
                 window.top.postMessage(messageObj, "*");
             }
         });
-        console.log("CONFIG: " + JSON.stringify(config.bootData.settings));
         // Listen for PopState events so we know when user navigates back with browser
         // On back navigation we need to remove the last item from breadcrumb
+        // if it is different than current dashboard
         window.onpopstate = (event: Event) => {
-          this.dashboardList.pop();
-          sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
-          this.notifyContainerWindow();
+            if (this.dashboardList.length > 0) {
+                const currentDB = window.location.pathname.split("/").pop();
+                const lastDB = this.dashboardList[this.dashboardList.length - 1].url.split("/").pop();
+                if (lastDB !== currentDB) {
+                    this.dashboardList.pop();
+                    sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
+                    this.notifyContainerWindow();
+                }
+            }
         }
     }
 
@@ -102,7 +108,7 @@ class BreadcrumbCtrl extends PanelCtrl {
             var uri = "db/" + this.currentDashboard;
             var obj: any = _.find(result, { uri: uri });
             // Add current dashboard to breadcrumb if it doesn't exist
-            if (_.findIndex(this.dashboardList, { url: "dashboard/" + uri }) < 0) {
+            if (_.findIndex(this.dashboardList, { url: "dashboard/" + uri }) < 0 && obj) {
                 this.dashboardList.push( { url: "dashboard/" + uri, name: obj.title } );
             }
             // Update session storage
