@@ -63,17 +63,15 @@ class BreadcrumbCtrl extends PanelCtrl {
             }
         });
         // Listen for PopState events so we know when user navigates back with browser
-        // On back navigation we need to remove the last item from breadcrumb
-        // if it is different than current dashboard
+        // On back navigation we'll take the changed breadcrumb param from url query and
+        // recreate dashboard list and notify parent window
         window.onpopstate = (event: Event) => {
             if (this.dashboardList.length > 0) {
-                const currentDB = window.location.pathname.split("/").pop();
-                const lastDB = this.dashboardList[this.dashboardList.length - 1].url.split("/").pop();
-                if (lastDB !== currentDB) {
-                    this.dashboardList.pop();
-                    sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
-                    this.notifyContainerWindow();
+                if ($location.search().breadcrumb) {
+                    const items = $location.search().breadcrumb.split(",");
+                    this.createDashboardList(items);
                 }
+                this.notifyContainerWindow();
             }
         }
     }
@@ -98,6 +96,21 @@ class BreadcrumbCtrl extends PanelCtrl {
     }
 
     /**
+     * Parse breadcrumb string for URL
+     * @returns {string}
+     */
+    parseBreadcrumbForUrl() {
+        let parsedBreadcrumb = "";
+        this.dashboardList.map((item, index) => {
+            parsedBreadcrumb += item.url.split("/").pop();
+            if (index < this.dashboardList.length - 1) {
+                parsedBreadcrumb += ",";
+            }
+        });
+        return parsedBreadcrumb;
+    }
+
+    /**
      * Update Breadcrumb items
      */
     updateText() {
@@ -114,6 +127,9 @@ class BreadcrumbCtrl extends PanelCtrl {
             // Update session storage
             sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
             this.notifyContainerWindow();
+            // Parse modified breadcrumb and set it to url query params
+            const parsedBreadcrumb = this.parseBreadcrumbForUrl();
+            this.windowLocation.search({ breadcrumb: parsedBreadcrumb }).replace();
         });
     }
 
@@ -141,7 +157,10 @@ class BreadcrumbCtrl extends PanelCtrl {
             this.dashboardList.splice(index + 1, this.dashboardList.length - index - 1);
             sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
         }
-        this.windowLocation.path(url);
+        // Parse modified breadcrumb
+        const parsedBreadcrumb = this.parseBreadcrumbForUrl();
+        // Set new url and notifiy parent window
+        this.windowLocation.path(url).search({ breadcrumb: parsedBreadcrumb });
         this.notifyContainerWindow();
     }
 
