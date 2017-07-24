@@ -137,12 +137,17 @@ class BreadcrumbCtrl extends PanelCtrl {
      * Notify container window
      */
     notifyContainerWindow() {
-        // Send message to uppper window
-        const messageObj = {
-            dashboard: window.location.pathname.split("/").pop(),
-            breadcrumb: this.dashboardList
-        }
-        window.top.postMessage(messageObj, "*");
+        // Check organisation id first
+        this.backendSrv.get("api/org").then((result: any) => {
+            const orgId = String(result.id);
+            const messageObj = {
+                dashboard: window.location.pathname.split("/").pop(),
+                breadcrumb: this.dashboardList,
+                orgId
+            }
+            // Send message to uppper window
+            window.top.postMessage(messageObj, "*");
+        });
     }
 
     /**
