@@ -11,13 +11,15 @@ export interface IBreadcrumbScope extends ng.IScope {
     navigate: (url: string) => void;
 }
 
+export interface dashboardListItem {
+    url: string;
+    name: string;
+}
+
 class BreadcrumbCtrl extends PanelCtrl {
     static templateUrl = "module.html";
     backendSrv: any;
-    dashboardList: {
-        url: string;
-        name: string;
-    }[];
+    dashboardList: dashboardListItem[];
     currentDashboard: string;
     windowLocation: ng.ILocationService;
     panel: any;
@@ -84,7 +86,10 @@ class BreadcrumbCtrl extends PanelCtrl {
         var dashIds = impressions.getDashboardOpened();
         // Fetch list of all dashboards from Grafana
         this.backendSrv.search({dashboardIds: dashIds, limit: this.panel.limit}).then((result: any) => {
-            this.dashboardList = items.map((item: string) => {
+            this.dashboardList = items.filter((filterItem: string) => {
+                return (_.findIndex(result, { uri: "db/" + filterItem }) > -1);
+            })
+            .map((item: string) => {
                 return {
                     url: "dashboard/db/" + item,
                     name: _.find(result, { uri: "db/" + item }).title
@@ -117,6 +122,11 @@ class BreadcrumbCtrl extends PanelCtrl {
         var dashIds = impressions.getDashboardOpened();
         // Fetch list of all dashboards from Grafana
         this.backendSrv.search({dashboardIds: dashIds, limit: this.panel.limit}).then((result: any) => {
+            // Filter dashboards only from this organisation
+            this.dashboardList = this.dashboardList.filter((item: dashboardListItem) => {
+                return (_.findIndex(result, { uri: "db/" + item.url.split("/").pop() }) > -1);
+            });
+            // Set current dashboard
             this.currentDashboard = window.location.pathname.split("/").pop();
             var uri = "db/" + this.currentDashboard;
             var obj: any = _.find(result, { uri: uri });
