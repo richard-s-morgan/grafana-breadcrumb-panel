@@ -155,7 +155,7 @@ class BreadcrumbCtrl extends PanelCtrl {
                 breadcrumb: this.dashboardList,
                 orgId
             }
-            // Send message to uppper window
+            // Send message to upper window
             window.top.postMessage(messageObj, "*");
         });
     }
