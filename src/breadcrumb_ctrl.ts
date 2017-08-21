@@ -51,6 +51,23 @@ class BreadcrumbCtrl extends PanelCtrl {
             this.dashboardList = JSON.parse(sessionStorage.getItem("dashlist"));
         }
         this.updateText();
+        // Check if Grafana is NOT inside Iframe and redirect to Pulssi frame such case
+        if (!this.isInsideIframe()) {
+            let url = "";
+            if (window.location.hostname === "localhost") {
+                // Using local version of Grafana for testing purposes
+                url = "http://localhost:8080/";
+            } else {
+                // Assume that Pulssi frontend is in the domain root of Grafana url
+                url = window.location.protocol + "//" + window.location.hostname + "/";
+            }
+            url += "?dashboard=" + window.location.pathname.split("/").pop();
+            url += "&breadcrumb=" + this.parseBreadcrumbForUrl()
+            if ($location.search().orgId) {
+                url += "&orgId=" + $location.search().orgId;
+            }
+            window.location.href = url;
+        }
         // Adding a mechanism for telling parent frame to navigate to new url
         // Add listener for route changes: If route has target-parameter then
         // tell parent window to navigate to given target
@@ -177,6 +194,18 @@ class BreadcrumbCtrl extends PanelCtrl {
         // Set new url and notifiy parent window
         this.windowLocation.path(url).search({ breadcrumb: parsedBreadcrumb });
         this.notifyContainerWindow();
+    }
+
+    /**
+     * Check if Grafana window is inside Iframe
+     * @returns {boolean}
+     */
+    isInsideIframe() {
+        try {
+            return window.self !== window.top;
+        } catch (error) {
+            return true;
+        }
     }
 
 }
