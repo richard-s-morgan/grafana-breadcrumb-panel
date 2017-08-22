@@ -63,8 +63,9 @@ class BreadcrumbCtrl extends PanelCtrl {
             }
             url += "?dashboard=" + window.location.pathname.split("/").pop();
             url += "&breadcrumb=" + this.parseBreadcrumbForUrl()
-            if ($location.search().orgId) {
-                url += "&orgId=" + $location.search().orgId;
+            const queryParams = window.location.search;
+            if (queryParams.indexOf("?") > -1) {
+              url += "&" + queryParams.substr(1, queryParams.length)
             }
             window.location.href = url;
         }
@@ -167,10 +168,18 @@ class BreadcrumbCtrl extends PanelCtrl {
         // Check organisation id first
         this.backendSrv.get("api/org").then((result: any) => {
             const orgId = String(result.id);
+            let grafanaQueryParams = "";
+            Object.keys(this.windowLocation.search()).map((param) => {
+                if (param !== "breadcrumb" && param !== "dashboard" && param !== "orgId"
+                    && this.windowLocation.search()[param]) {
+                    grafanaQueryParams += "&" + param + "=" + this.windowLocation.search()[param];
+                }
+            });
             const messageObj = {
                 dashboard: window.location.pathname.split("/").pop(),
                 breadcrumb: this.dashboardList,
-                orgId
+                orgId,
+                grafanaQueryParams
             }
             // Send message to upper window
             window.top.postMessage(messageObj, "*");
