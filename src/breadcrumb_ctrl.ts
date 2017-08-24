@@ -51,6 +51,24 @@ class BreadcrumbCtrl extends PanelCtrl {
             this.dashboardList = JSON.parse(sessionStorage.getItem("dashlist"));
         }
         this.updateText();
+        // Check if Grafana is NOT inside Iframe and redirect to Pulssi frame such case
+        if (!this.isInsideIframe()) {
+            let url = "";
+            if (window.location.hostname === "localhost") {
+                // Using local version of Grafana for testing purposes
+                url = "http://localhost:8080/";
+            } else {
+                // Assume that Pulssi frontend is in the domain root of Grafana url
+                url = window.location.protocol + "//" + window.location.hostname + "/";
+            }
+            url += "?dashboard=" + window.location.pathname.split("/").pop();
+            url += "&breadcrumb=" + this.parseBreadcrumbForUrl()
+            const queryParams = window.location.search;
+            if (queryParams.indexOf("?") > -1) {
+              url += "&" + queryParams.substr(1, queryParams.length)
+            }
+            window.location.href = url;
+        }
         // Adding a mechanism for telling parent frame to navigate to new url
         // Add listener for route changes: If route has target-parameter then
         // tell parent window to navigate to given target
@@ -150,10 +168,18 @@ class BreadcrumbCtrl extends PanelCtrl {
         // Check organisation id first
         this.backendSrv.get("api/org").then((result: any) => {
             const orgId = String(result.id);
+            let grafanaQueryParams = "";
+            Object.keys(this.windowLocation.search()).map((param) => {
+                if (param !== "breadcrumb" && param !== "dashboard" && param !== "orgId"
+                    && this.windowLocation.search()[param]) {
+                    grafanaQueryParams += "&" + param + "=" + this.windowLocation.search()[param];
+                }
+            });
             const messageObj = {
                 dashboard: window.location.pathname.split("/").pop(),
                 breadcrumb: this.dashboardList,
-                orgId
+                orgId,
+                grafanaQueryParams
             }
             // Send message to upper window
             window.top.postMessage(messageObj, "*");
@@ -177,6 +203,18 @@ class BreadcrumbCtrl extends PanelCtrl {
         // Set new url and notifiy parent window
         this.windowLocation.path(url).search({ breadcrumb: parsedBreadcrumb });
         this.notifyContainerWindow();
+    }
+
+    /**
+     * Check if Grafana window is inside Iframe
+     * @returns {boolean}
+     */
+    isInsideIframe() {
+        try {
+            return window.self !== window.top;
+        } catch (error) {
+            return true;
+        }
     }
 
 }
