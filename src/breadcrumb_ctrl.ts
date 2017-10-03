@@ -103,6 +103,7 @@ class BreadcrumbCtrl extends PanelCtrl {
      */
     createDashboardList(items: string[]) {
         var dashIds = impressions.getDashboardOpened();
+        var orgId = this.windowLocation.search()["orgId"];
         // Fetch list of all dashboards from Grafana
         this.backendSrv.search({dashboardIds: dashIds, limit: this.panel.limit}).then((result: any) => {
             this.dashboardList = items.filter((filterItem: string) => {
@@ -112,7 +113,7 @@ class BreadcrumbCtrl extends PanelCtrl {
                 return {
                     url: "dashboard/db/" + item,
                     name: _.find(result, { uri: "db/" + item }).title,
-                    params: ""
+                    params: this.parseParamsString({ orgId })
                 }
             });
             // Update session storage
@@ -140,13 +141,13 @@ class BreadcrumbCtrl extends PanelCtrl {
      */
     updateText() {
         var dashIds = impressions.getDashboardOpened();
+        var queryParams = window.location.search;
         // Fetch list of all dashboards from Grafana
         this.backendSrv.search({dashboardIds: dashIds, limit: this.panel.limit}).then((result: any) => {
             // Set current dashboard
             this.currentDashboard = window.location.pathname.split("/").pop();
             var uri = "db/" + this.currentDashboard;
             var obj: any = _.find(result, { uri: uri });
-            const queryParams = window.location.search;
             // Add current dashboard to breadcrumb if it doesn't exist
             if (_.findIndex(this.dashboardList, { url: "dashboard/" + uri }) < 0 && obj) {
                 this.dashboardList.push( { url: "dashboard/" + uri, name: obj.title, params: queryParams } );
@@ -164,23 +165,26 @@ class BreadcrumbCtrl extends PanelCtrl {
      * Notify container window
      */
     notifyContainerWindow() {
-        // Check organisation id first
-        const orgId = this.windowLocation.search()["orgId"];
+        // Get Grafana query params
         let grafanaQueryParams = "";
         Object.keys(this.windowLocation.search()).map((param) => {
-            if (param !== "breadcrumb" && param !== "dashboard" && param !== "orgId"
+            if (param !== "breadcrumb" && param !== "dashboard" && param !== "orgId" && param !== "random"
                 && this.windowLocation.search()[param]) {
                 grafanaQueryParams += "&" + param + "=" + this.windowLocation.search()[param];
             }
         });
-        const messageObj = {
-            dashboard: window.location.pathname.split("/").pop(),
-            breadcrumb: this.dashboardList,
-            orgId,
-            grafanaQueryParams
-        }
-        // Send message to upper window
-        window.top.postMessage(messageObj, "*");
+        // Check organisation id
+        this.backendSrv.get("api/org").then((result: any) => {
+            const orgId = String(result.id);
+            const messageObj = {
+                dashboard: window.location.pathname.split("/").pop(),
+                breadcrumb: this.dashboardList,
+                orgId,
+                grafanaQueryParams
+            }
+            // Send message to upper window
+            window.top.postMessage(messageObj, "*");
+        });
     }
 
     /**
@@ -229,11 +233,10 @@ class BreadcrumbCtrl extends PanelCtrl {
             this.dashboardList.splice(index + 1, this.dashboardList.length - index - 1);
             sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
         }
-        // Parse modified breadcrumb
-        const parsedBreadcrumb = this.parseBreadcrumbForUrl();
         // Parse params string to object
         const queryParams = this.parseParamsObject(params);
-        queryParams["breadcrumb"] = parsedBreadcrumb;
+        // Delete possible breadcrumb param so that breadcrumb from session will be used instead
+        delete queryParams["breadcrumb"];
         let urlRoot = "";
         if (window.location.hostname === "localhost") {
             // Using local version of Grafana for testing purposes
