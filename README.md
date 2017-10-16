@@ -22,8 +22,11 @@ The compiled product is in ``dist`` folder.
 ### Deployment
 Copy the contents of ``dist`` folder to ``plugins/breadcrumb`` folder so Grafana will find the plugin and it can be used in Grafana dashboards.
 
+### Always inside iFrame
+Pulssi uses Grafana inside iFrame. When breadcrumb panel is loaded it checks if the Grafana window is inside iFrame and if not it is redirected to Pulssi's Grafana page. Also when dashboard is loaded and added to breadcrumb in session storage then this panel sends the updated information to Pulssi frame.
+
 ### Navigating out of iFrame
-Pulssi uses Grafana inside iFrame. Sending links from Grafana window to parent window can be achieved by creating a Grafana dashboard link to current dashboard and setting query to contain target and params.
+Sending links from Grafana window to parent window can be achieved by creating a Grafana dashboard link to current dashboard and setting query to contain target and params.
 e.g. Set query to
 ```
 target=logs&params=streams

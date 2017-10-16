@@ -1,3 +1,24 @@
+/**
+ * <h3>Breadcrumb panel for Grafana</h3>
+ *
+ * This breadcumb panel utilizes session storage to store dashboards where user has visited.
+ * When panel is loaded it first checks if breadcrumb is given in url params and utilizes that.
+ * If no breadcrumb is given in url params then panel tries to read breadcrumb from session storage.
+ * Finally the panel adds the just loaded dashboard as the latest item in dashboard and updates session storage.
+ * Breadcrumb stores the dashboard's name, url and possible query params to the session storage.
+ * If user navigates with browser back button then breadcrumb is recreated from previous url params.
+ * Also if user navigates back by clicking one of the breadcrumb items then the items following the selected
+ * item are removed from breadcrumb, user is moved to selected dashboard and session storage is updated.
+ *
+ * Pulssi specific features:
+ * Pulssi uses Grafana inside iframe and Grafana shouldn't be used without Pulssi frame.
+ * That's why breadcrumb panel checks if it is used inside iframe and if not then it navigates to Pulssi frame.
+ * The breadcrumb panel also keeps Pulssi frame in sync with Grafana so that both know the dashboard, breadcrumb
+ * and Grafana's current url query params. The information is shared with window postmessage.
+ * Pulssi breadcrumb also has a feature to navigate out of Grafana frame to some other Pulssi page e.g. Logs.
+ * This is done by giving a target url query param in Grafana link e.g. ?target=logs
+ */
+
 /// <reference path="../typings/common.d.ts" />
 /// <reference path="../typings/index.d.ts" />
 
@@ -242,7 +263,7 @@ class BreadcrumbCtrl extends PanelCtrl {
             // Using local version of Grafana for testing purposes
             urlRoot = "http://localhost:3000/";
         } else {
-            // Assume that Grafana is is folder path 'grafana'
+            // Assume that Grafana is in folder path 'grafana'
             urlRoot = window.location.protocol + "//" + window.location.hostname + "/grafana/";
         }
         // Set new url and notify parent window
