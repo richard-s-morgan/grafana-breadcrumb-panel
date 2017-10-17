@@ -1,3 +1,24 @@
+/**
+ * <h3>Breadcrumb panel for Grafana</h3>
+ *
+ * This breadcumb panel utilizes session storage to store dashboards where user has visited.
+ * When panel is loaded it first checks if breadcrumb is given in url params and utilizes that.
+ * If no breadcrumb is given in url params then panel tries to read breadcrumb from session storage.
+ * Finally the panel adds the just loaded dashboard as the latest item in dashboard and updates session storage.
+ * Breadcrumb stores the dashboard's name, url and possible query params to the session storage.
+ * If user navigates with browser back button then breadcrumb is recreated from previous url params.
+ * Also if user navigates back by clicking one of the breadcrumb items then the items following the selected
+ * item are removed from breadcrumb, user is moved to selected dashboard and session storage is updated.
+ *
+ * Pulssi specific features:
+ * Pulssi uses Grafana inside iframe and Grafana shouldn't be used without Pulssi frame.
+ * That's why breadcrumb panel checks if it is used inside iframe and if not then it navigates to Pulssi frame.
+ * The breadcrumb panel also keeps Pulssi frame in sync with Grafana so that both know the dashboard, breadcrumb
+ * and Grafana's current url query params. The information is shared with window postmessage.
+ * Pulssi breadcrumb also has a feature to navigate out of Grafana frame to some other Pulssi page e.g. Logs.
+ * This is done by giving a target url query param in Grafana link e.g. ?target=logs
+ */
+
 /// <reference path="../typings/common.d.ts" />
 /// <reference path="../typings/index.d.ts" />
 
@@ -14,6 +35,7 @@ export interface IBreadcrumbScope extends ng.IScope {
 export interface dashboardListItem {
     url: string;
     name: string;
+    params: string;
 }
 
 class BreadcrumbCtrl extends PanelCtrl {
@@ -102,6 +124,7 @@ class BreadcrumbCtrl extends PanelCtrl {
      */
     createDashboardList(items: string[]) {
         var dashIds = impressions.getDashboardOpened();
+        var orgId = this.windowLocation.search()["orgId"];
         // Fetch list of all dashboards from Grafana
         this.backendSrv.search({dashboardIds: dashIds, limit: this.panel.limit}).then((result: any) => {
             this.dashboardList = items.filter((filterItem: string) => {
@@ -110,7 +133,8 @@ class BreadcrumbCtrl extends PanelCtrl {
             .map((item: string) => {
                 return {
                     url: "dashboard/db/" + item,
-                    name: _.find(result, { uri: "db/" + item }).title
+                    name: _.find(result, { uri: "db/" + item }).title,
+                    params: this.parseParamsString({ orgId })
                 }
             });
             // Update session storage
@@ -138,19 +162,16 @@ class BreadcrumbCtrl extends PanelCtrl {
      */
     updateText() {
         var dashIds = impressions.getDashboardOpened();
+        var queryParams = window.location.search;
         // Fetch list of all dashboards from Grafana
         this.backendSrv.search({dashboardIds: dashIds, limit: this.panel.limit}).then((result: any) => {
-            // Filter dashboards only from this organisation
-            this.dashboardList = this.dashboardList.filter((item: dashboardListItem) => {
-                return (_.findIndex(result, { uri: "db/" + item.url.split("/").pop() }) > -1);
-            });
             // Set current dashboard
             this.currentDashboard = window.location.pathname.split("/").pop();
             var uri = "db/" + this.currentDashboard;
             var obj: any = _.find(result, { uri: uri });
             // Add current dashboard to breadcrumb if it doesn't exist
             if (_.findIndex(this.dashboardList, { url: "dashboard/" + uri }) < 0 && obj) {
-                this.dashboardList.push( { url: "dashboard/" + uri, name: obj.title } );
+                this.dashboardList.push( { url: "dashboard/" + uri, name: obj.title, params: queryParams } );
             }
             // Update session storage
             sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
@@ -165,16 +186,17 @@ class BreadcrumbCtrl extends PanelCtrl {
      * Notify container window
      */
     notifyContainerWindow() {
-        // Check organisation id first
+        // Get Grafana query params
+        let grafanaQueryParams = "";
+        Object.keys(this.windowLocation.search()).map((param) => {
+            if (param !== "breadcrumb" && param !== "dashboard" && param !== "orgId" && param !== "random"
+                && this.windowLocation.search()[param]) {
+                grafanaQueryParams += "&" + param + "=" + this.windowLocation.search()[param];
+            }
+        });
+        // Check organisation id
         this.backendSrv.get("api/org").then((result: any) => {
             const orgId = String(result.id);
-            let grafanaQueryParams = "";
-            Object.keys(this.windowLocation.search()).map((param) => {
-                if (param !== "breadcrumb" && param !== "dashboard" && param !== "orgId"
-                    && this.windowLocation.search()[param]) {
-                    grafanaQueryParams += "&" + param + "=" + this.windowLocation.search()[param];
-                }
-            });
             const messageObj = {
                 dashboard: window.location.pathname.split("/").pop(),
                 breadcrumb: this.dashboardList,
@@ -187,10 +209,44 @@ class BreadcrumbCtrl extends PanelCtrl {
     }
 
     /**
+     * Parse params string to object
+     * @param {string} params
+     * @returns {Object}
+     */
+    parseParamsObject(params: string) {
+        const paramsObj = {};
+        if (params.charAt(0) === "?") {
+            params = params.substr(1, params.length);
+        }
+        const paramsArray = params.split("&");
+        paramsArray.map((paramItem) => {
+            const paramItemArr = paramItem.split("=");
+            paramsObj[paramItemArr[0]] = paramItemArr[1];
+        });
+        return paramsObj;
+    }
+
+    /**
+     * Parse params object to string
+     * @param {Object} params
+     * @returns {string}
+     */
+    parseParamsString(params: Object) {
+        let paramsString = "?";
+        Object.keys(params).map((paramKey, index) => {
+            paramsString += paramKey + "=" + params[paramKey];
+            if (index < Object.keys(params).length - 1) {
+                paramsString += "&";
+            }
+        });
+        return paramsString;
+    }
+
+    /**
      * Navigate to given dashboard
      * @param {string} url
      */
-    navigate(url: string) {
+    navigate(url: string, params: string) {
         // Check if user is navigating backwards in breadcrumb and
         // remove all items that follow the selected item in that case
         const index = _.findIndex(this.dashboardList, { url: url });
@@ -198,10 +254,20 @@ class BreadcrumbCtrl extends PanelCtrl {
             this.dashboardList.splice(index + 1, this.dashboardList.length - index - 1);
             sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
         }
-        // Parse modified breadcrumb
-        const parsedBreadcrumb = this.parseBreadcrumbForUrl();
-        // Set new url and notifiy parent window
-        this.windowLocation.path(url).search({ breadcrumb: parsedBreadcrumb });
+        // Parse params string to object
+        const queryParams = this.parseParamsObject(params);
+        // Delete possible breadcrumb param so that breadcrumb from session will be used instead
+        delete queryParams["breadcrumb"];
+        let urlRoot = "";
+        if (window.location.hostname === "localhost") {
+            // Using local version of Grafana for testing purposes
+            urlRoot = "http://localhost:3000/";
+        } else {
+            // Assume that Grafana is in folder path 'grafana'
+            urlRoot = window.location.protocol + "//" + window.location.hostname + "/grafana/";
+        }
+        // Set new url and notify parent window
+        window.location.href = urlRoot + url + this.parseParamsString(queryParams);
         this.notifyContainerWindow();
     }
 
