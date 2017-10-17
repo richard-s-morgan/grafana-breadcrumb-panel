@@ -95,6 +95,17 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                         _this.dashboardList = JSON.parse(sessionStorage.getItem("dashlist"));
                     }
                     _this.updateText();
+                    // Listen for PopState events so we know when user navigates back with browser
+                    // On back navigation we'll take the changed breadcrumb param from url query and
+                    // recreate dashboard list
+                    window.onpopstate = function (event) {
+                        if (_this.dashboardList.length > 0) {
+                            if ($location.search().breadcrumb) {
+                                var _items = $location.search().breadcrumb.split(",");
+                                _this.createDashboardList(_items);
+                            }
+                        }
+                    };
                     return _this;
                 }
                 /**
@@ -109,12 +120,16 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                         var _this2 = this;
 
                         var dashIds = impressions.getDashboardOpened();
+                        var orgId = this.windowLocation.search()["orgId"];
                         // Fetch list of all dashboards from Grafana
                         this.backendSrv.search({ dashboardIds: dashIds, limit: this.panel.limit }).then(function (result) {
-                            _this2.dashboardList = items.map(function (item) {
+                            _this2.dashboardList = items.filter(function (filterItem) {
+                                return _.findIndex(result, { uri: "db/" + filterItem }) > -1;
+                            }).map(function (item) {
                                 return {
                                     url: "dashboard/db/" + item,
-                                    name: _.find(result, { uri: "db/" + item }).title
+                                    name: _.find(result, { uri: "db/" + item }).title,
+                                    params: _this2.parseParamsString({ orgId: orgId })
                                 };
                             });
                             // Update session storage
@@ -122,26 +137,72 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                         });
                     }
                 }, {
-                    key: "updateText",
-                    value: function updateText() {
+                    key: "parseBreadcrumbForUrl",
+                    value: function parseBreadcrumbForUrl() {
                         var _this3 = this;
 
+                        var parsedBreadcrumb = "";
+                        this.dashboardList.map(function (item, index) {
+                            parsedBreadcrumb += item.url.split("/").pop();
+                            if (index < _this3.dashboardList.length - 1) {
+                                parsedBreadcrumb += ",";
+                            }
+                        });
+                        return parsedBreadcrumb;
+                    }
+                }, {
+                    key: "updateText",
+                    value: function updateText() {
+                        var _this4 = this;
+
                         var dashIds = impressions.getDashboardOpened();
+                        var queryParams = window.location.search;
                         // Fetch list of all dashboards from Grafana
                         this.backendSrv.search({ dashboardIds: dashIds, limit: this.panel.limit }).then(function (result) {
-                            var uri = "db/" + window.location.pathname.split("/").pop();
+                            // Set current dashboard
+                            _this4.currentDashboard = window.location.pathname.split("/").pop();
+                            var uri = "db/" + _this4.currentDashboard;
                             var obj = _.find(result, { uri: uri });
                             // Add current dashboard to breadcrumb if it doesn't exist
-                            if (_.findIndex(_this3.dashboardList, { url: "dashboard/" + uri }) < 0) {
-                                _this3.dashboardList.push({ url: "dashboard/" + uri, name: obj.title });
+                            if (_.findIndex(_this4.dashboardList, { url: "dashboard/" + uri }) < 0 && obj) {
+                                _this4.dashboardList.push({ url: "dashboard/" + uri, name: obj.title, params: queryParams });
                             }
                             // Update session storage
-                            sessionStorage.setItem("dashlist", JSON.stringify(_this3.dashboardList));
+                            sessionStorage.setItem("dashlist", JSON.stringify(_this4.dashboardList));
+                            // Parse modified breadcrumb and set it to url query params
+                            var parsedBreadcrumb = _this4.parseBreadcrumbForUrl();
+                            _this4.windowLocation.search({ breadcrumb: parsedBreadcrumb }).replace();
                         });
                     }
                 }, {
+                    key: "parseParamsObject",
+                    value: function parseParamsObject(params) {
+                        var paramsObj = {};
+                        if (params.charAt(0) === "?") {
+                            params = params.substr(1, params.length);
+                        }
+                        var paramsArray = params.split("&");
+                        paramsArray.map(function (paramItem) {
+                            var paramItemArr = paramItem.split("=");
+                            paramsObj[paramItemArr[0]] = paramItemArr[1];
+                        });
+                        return paramsObj;
+                    }
+                }, {
+                    key: "parseParamsString",
+                    value: function parseParamsString(params) {
+                        var paramsString = "?";
+                        Object.keys(params).map(function (paramKey, index) {
+                            paramsString += paramKey + "=" + params[paramKey];
+                            if (index < Object.keys(params).length - 1) {
+                                paramsString += "&";
+                            }
+                        });
+                        return paramsString;
+                    }
+                }, {
                     key: "navigate",
-                    value: function navigate(url) {
+                    value: function navigate(url, params) {
                         // Check if user is navigating backwards in breadcrumb and
                         // remove all items that follow the selected item in that case
                         var index = _.findIndex(this.dashboardList, { url: url });
@@ -149,7 +210,14 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                             this.dashboardList.splice(index + 1, this.dashboardList.length - index - 1);
                             sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
                         }
-                        this.windowLocation.path(url);
+                        // Parse params string to object
+                        var queryParams = this.parseParamsObject(params);
+                        // Delete possible breadcrumb param so that breadcrumb from session will be used instead
+                        delete queryParams["breadcrumb"];
+                        // Check url root assuming that Grafana dashboard url has string "dashboard/db/"
+                        var urlRoot = window.location.href.substr(0, window.location.href.indexOf("dashboard/db/"));
+                        // Set new url and notify parent window
+                        window.location.href = urlRoot + url + this.parseParamsString(queryParams);
                     }
                 }]);
 
