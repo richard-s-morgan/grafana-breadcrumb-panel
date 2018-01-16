@@ -88,12 +88,15 @@ class BreadcrumbCtrl extends PanelCtrl {
         // Fetch list of all dashboards from Grafana
         this.backendSrv.search({dashboardIds: dashIds, limit: this.panel.limit}).then((result: any) => {
             this.dashboardList = items.filter((filterItem: string) => {
-                return (_.findIndex(result, { uri: "db/" + filterItem }) > -1);
+                const isInDatabase = _.findIndex(result, { uri: "db/" + filterItem }) > -1;
+                const isInFile = _.findIndex(result, { uri: "file/" + filterItem }) > -1;
+                return (isInDatabase || isInFile);
             })
             .map((item: string) => {
+                const dbSource = _.findIndex(result, { uri: "file/" + item }) > -1 ? "file" : "db";
                 return {
-                    url: "dashboard/db/" + item,
-                    name: _.find(result, { uri: "db/" + item }).title,
+                    url: `dashboard/${dbSource}/${item}`,
+                    name: _.find(result, { uri: `${dbSource}/${item}` }).title,
                     params: this.parseParamsString({ orgId })
                 }
             });
@@ -127,7 +130,8 @@ class BreadcrumbCtrl extends PanelCtrl {
          this.backendSrv.search({dashboardIds: dashIds, limit: this.panel.limit}).then((result: any) => {
              // Set current dashboard
              this.currentDashboard = window.location.pathname.split("/").pop();
-             var uri = "db/" + this.currentDashboard;
+             const dbSource = window.location.pathname.indexOf("/file/") > -1 ? "file" : "db";
+             const uri = `${dbSource}/${this.currentDashboard}`;
              var obj: any = _.find(result, { uri: uri });
              // Add current dashboard to breadcrumb if it doesn't exist
              if (_.findIndex(this.dashboardList, { url: "dashboard/" + uri }) < 0 && obj) {
