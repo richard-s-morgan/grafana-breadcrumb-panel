@@ -124,11 +124,14 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                         // Fetch list of all dashboards from Grafana
                         this.backendSrv.search({ dashboardIds: dashIds, limit: this.panel.limit }).then(function (result) {
                             _this2.dashboardList = items.filter(function (filterItem) {
-                                return _.findIndex(result, { uri: "db/" + filterItem }) > -1;
+                                var isInDatabase = _.findIndex(result, { uri: "db/" + filterItem }) > -1;
+                                var isInFile = _.findIndex(result, { uri: "file/" + filterItem }) > -1;
+                                return isInDatabase || isInFile;
                             }).map(function (item) {
+                                var dbSource = _.findIndex(result, { uri: "file/" + item }) > -1 ? "file" : "db";
                                 return {
-                                    url: "dashboard/db/" + item,
-                                    name: _.find(result, { uri: "db/" + item }).title,
+                                    url: "dashboard/" + dbSource + "/" + item,
+                                    name: _.find(result, { uri: dbSource + "/" + item }).title,
                                     params: _this2.parseParamsString({ orgId: orgId })
                                 };
                             });
@@ -161,7 +164,8 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                         this.backendSrv.search({ dashboardIds: dashIds, limit: this.panel.limit }).then(function (result) {
                             // Set current dashboard
                             _this4.currentDashboard = window.location.pathname.split("/").pop();
-                            var uri = "db/" + _this4.currentDashboard;
+                            var dbSource = window.location.pathname.indexOf("/file/") > -1 ? "file" : "db";
+                            var uri = dbSource + "/" + _this4.currentDashboard;
                             var obj = _.find(result, { uri: uri });
                             // Add current dashboard to breadcrumb if it doesn't exist
                             if (_.findIndex(_this4.dashboardList, { url: "dashboard/" + uri }) < 0 && obj) {
