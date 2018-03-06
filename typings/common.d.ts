@@ -2,7 +2,7 @@
 declare module 'app/plugins/sdk' {
   var sdk: any;
   export class PanelCtrl {
-      constructor($scope, $injector);
+      constructor($scope: any, $injector: any);
   }
   export default sdk;
 }
