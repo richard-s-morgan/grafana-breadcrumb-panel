@@ -92,26 +92,26 @@ class BreadcrumbCtrl extends PanelCtrl {
             window.location.href = url;
         }
         // Adding a mechanism for telling parent frame to navigate to new url
-        // Add listener for route changes: If route has pulssitarget-parameter then
+        // Add listener for route changes: If route has relaytarget-parameter then
         // tell parent window to navigate to given target
-        // e.g. setting following url-link in some Grafana dashboard: ?pulssitarget=logs
-        // pulssiparams-parameter sets the path and possible query-params which are given to iFrame under parent
-        // e.g. pulssitarget=logs&pulssiparams=search%3Foption%3Dtest
+        // e.g. setting following url-link in some Grafana dashboard: ?relaytarget=logs
+        // relayparams-parameter sets the path and possible query-params which are given to iFrame under parent
+        // e.g. relaytarget=logs&relayparams=search%3Foption%3Dtest
         $scope.$on("$routeUpdate", () => {
-            if ($location.search().pulssitarget) {
+            if ($location.search().relaytarget) {
                 const messageObj = {
-                    pulssitarget: $location.search().pulssitarget,
-                    pulssiparams: $location.search().pulssiparams
+                    relaytarget: $location.search().relaytarget,
+                    relayparams: $location.search().relayparams
                 };
                 // Add possible url params as their own keys to messageObj
-                if (messageObj.pulssiparams.indexOf("?") > -1) {
-                    const queryString = messageObj.pulssiparams.split("?")[1];
+                if (messageObj.relayparams.indexOf("?") > -1) {
+                    const queryString = messageObj.relayparams.split("?")[1];
                     const queryObj = {};
                     queryString.split("&").map(item => queryObj[item.split("=")[0]] = item.split("=")[1]);
                     Object.keys(queryObj).map(param => {
                         messageObj[param] = queryObj[param];
                     });
-                    messageObj.pulssiparams = messageObj.pulssiparams.split("?")[0];
+                    messageObj.relayparams = messageObj.relayparams.split("?")[0];
                 }
                 // Send messageObj to parent window
                 window.top.postMessage(messageObj, "*");

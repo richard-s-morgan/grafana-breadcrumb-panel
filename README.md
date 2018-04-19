@@ -26,21 +26,21 @@ Copy the contents of ``dist`` folder to ``plugins/breadcrumb`` folder so Grafana
 Pulssi uses Grafana inside iFrame. When breadcrumb panel is loaded it checks if the Grafana window is inside iFrame and if not it is redirected to Pulssi's Grafana page. Also when dashboard is loaded and added to breadcrumb in session storage then this panel sends the updated information to Pulssi frame.
 
 ### Navigating out of iFrame
-Sending links from Grafana window to parent window can be achieved by creating a Grafana dashboard link to current dashboard and setting query to contain pulssitarget and pulssiparams parameters.
+Sending links from Grafana window to parent window can be achieved by creating a Grafana dashboard link to current dashboard and setting query to contain relaytarget and relayparams parameters.
 e.g. Set query to
 ```
-pulssitarget=logs&pulssiparams=streams
+relaytarget=logs&relayparams=streams
 ```
 So e.g. if parent domain is ``https://demo.pulssi.digia.com`` this will tell parent window to navigate to
 ```
-https://demo.pulssi.digia.com/logs?pulssiparams=streams
+https://demo.pulssi.digia.com/logs?relayparams=streams
 ```
-You can also send optional params inside pulssiparams and they will be added to query but they must be url-encoded.
+You can also send optional params inside relayparams and they will be added to query but they must be url-encoded.
 E.g. if you send following link from Grafana:
 ```
-pulssitarget=logs&pulssiparams=streams%2F%3Fstarttime%3D123%26term%3Dtest
+relaytarget=logs&relayparams=streams%2F%3Fstarttime%3D123%26term%3Dtest
 ```
 It will call parent window with following URL:
 ```
-https://demo.pulssi.digia.com/logs?pulssiparams=streams&starttime=123&term=test
+https://demo.pulssi.digia.com/logs?relayparams=streams&starttime=123&term=test
 ```
