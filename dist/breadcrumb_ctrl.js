@@ -175,7 +175,7 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                             sessionStorage.setItem("dashlist", JSON.stringify(_this4.dashboardList));
                             // Parse modified breadcrumb and set it to url query params
                             var parsedBreadcrumb = _this4.parseBreadcrumbForUrl();
-                            _this4.windowLocation.search({ breadcrumb: parsedBreadcrumb }).replace();
+                            _this4.windowLocation.search('breadcrumb', parsedBreadcrumb).replace();
                         });
                     }
                 }, {
