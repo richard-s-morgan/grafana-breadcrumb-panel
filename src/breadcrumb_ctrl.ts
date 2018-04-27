@@ -195,7 +195,7 @@ class BreadcrumbCtrl extends PanelCtrl {
             this.notifyContainerWindow();
             // Parse modified breadcrumb and set it to url query params
             const parsedBreadcrumb = this.parseBreadcrumbForUrl();
-            this.windowLocation.search({ breadcrumb: parsedBreadcrumb }).replace();
+            this.windowLocation.search("breadcrumb", parsedBreadcrumb).replace();
         });
     }
 
