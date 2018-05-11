@@ -36,6 +36,7 @@ export interface dashboardListItem {
     url: string;
     name: string;
     params: string;
+    uid: string;
 }
 
 class BreadcrumbCtrl extends PanelCtrl {
@@ -147,10 +148,12 @@ class BreadcrumbCtrl extends PanelCtrl {
             })
             .map((item: string) => {
                 const dbSource = _.findIndex(result, { uri: "file/" + item }) > -1 ? "file" : "db";
+                const uid = _.find(result, { uri: `${dbSource}/${item}` }).uid;
                 return {
-                    url: `dashboard/${dbSource}/${item}`,
+                    url: `d/${uid}/${item}`,
                     name: _.find(result, { uri: `${dbSource}/${item}` }).title,
-                    params: this.parseParamsString({ orgId })
+                    params: this.parseParamsString({ orgId }),
+                    uid
                 }
             });
             // Update session storage
@@ -182,13 +185,14 @@ class BreadcrumbCtrl extends PanelCtrl {
         // Fetch list of all dashboards from Grafana
         this.backendSrv.search({dashboardIds: dashIds, limit: this.panel.limit}).then((result: any) => {
             // Set current dashboard
-            this.currentDashboard = window.location.pathname.split("/").pop();
-            const dbSource = window.location.pathname.indexOf("/file/") > -1 ? "file" : "db";
+            var path = window.location.pathname.split("/");
+            this.currentDashboard = path.pop();
+            const dbSource = "d/" + path.pop();
             const uri = `${dbSource}/${this.currentDashboard}`;
-            var obj: any = _.find(result, { uri: uri });
+            var obj: any = _.find(result, { url: uri });
             // Add current dashboard to breadcrumb if it doesn't exist
-            if (_.findIndex(this.dashboardList, { url: "dashboard/" + uri }) < 0 && obj) {
-                this.dashboardList.push( { url: "dashboard/" + uri, name: obj.title, params: queryParams } );
+            if (_.findIndex(this.dashboardList, { url: uri }) < 0 && obj) {
+                this.dashboardList.push( { url: uri, name: obj.title, params: queryParams, uid: obj.uid } );
             }
             // Update session storage
             sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
