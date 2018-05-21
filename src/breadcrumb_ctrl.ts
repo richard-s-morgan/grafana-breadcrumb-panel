@@ -150,7 +150,7 @@ class BreadcrumbCtrl extends PanelCtrl {
                 const dbSource = _.findIndex(result, { uri: "file/" + item }) > -1 ? "file" : "db";
                 const uid = _.find(result, { uri: `${dbSource}/${item}` }).uid;
                 return {
-                    url: `d/${uid}/${item}`,
+                    url: `/d/${uid}/${item}`,
                     name: _.find(result, { uri: `${dbSource}/${item}` }).title,
                     params: this.parseParamsString({ orgId }),
                     uid
@@ -187,7 +187,7 @@ class BreadcrumbCtrl extends PanelCtrl {
             // Set current dashboard
             var path = window.location.pathname.split("/");
             this.currentDashboard = path.pop();
-            const dbSource = "d/" + path.pop();
+            const dbSource = "/d/" + path.pop();
             const uri = `${dbSource}/${this.currentDashboard}`;
             var obj: any = _.find(result, { url: uri });
             // Add current dashboard to breadcrumb if it doesn't exist
