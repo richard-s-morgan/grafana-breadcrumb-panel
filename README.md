@@ -4,6 +4,8 @@ and displays them as a breadcrumb. Each dashboard is added only once to the brea
 dashboard in breadcrumb by clicking the dashboard name link text. When navigation back all items coming after the selected
 dashboard will be removed from the breadcrumb. Note that breadcrumb can track only dashboards that have breadcrumb panel on them.
 
+Panel has an option for setting it as the root. If set, this will clear breadcrumb in root dashboard.
+
 To understand what is a plugin, read the [Grafana's documentation about plugins](http://docs.grafana.org/plugins/development/).
 
 ### Features
