@@ -1,9 +1,9 @@
 "use strict";
 
-System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression_store", "./breadcrumb.css!"], function (_export, _context) {
+System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_export, _context) {
     "use strict";
 
-    var _, PanelCtrl, impressions, _createClass, BreadcrumbCtrl;
+    var _, PanelCtrl, _createClass, panelDefaults, BreadcrumbCtrl;
 
     function _classCallCheck(instance, Constructor) {
         if (!(instance instanceof Constructor)) {
@@ -40,8 +40,6 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
             _ = _lodash.default;
         }, function (_appPluginsSdk) {
             PanelCtrl = _appPluginsSdk.PanelCtrl;
-        }, function (_appFeaturesDashboardImpression_store) {
-            impressions = _appFeaturesDashboardImpression_store.impressions;
         }, function (_breadcrumbCss) {}],
         execute: function () {
             _createClass = function () {
@@ -62,6 +60,10 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                 };
             }();
 
+            panelDefaults = {
+                isRootDashboard: false
+            };
+
             _export("PanelCtrl", _export("BreadcrumbCtrl", BreadcrumbCtrl = function (_PanelCtrl) {
                 _inherits(BreadcrumbCtrl, _PanelCtrl);
 
@@ -77,13 +79,17 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
 
                     var _this = _possibleConstructorReturn(this, (BreadcrumbCtrl.__proto__ || Object.getPrototypeOf(BreadcrumbCtrl)).call(this, $scope, $injector));
 
+                    panelDefaults.isRootDashboard = false;
+                    _this.panel.title = 'Breadcrumb Panel';
+                    _.defaults(_this.panel, panelDefaults);
+                    _this.events.on('init-edit-mode', _this.onInitEditMode.bind(_this));
                     // Init variables
                     $scope.navigate = _this.navigate.bind(_this);
                     _this.backendSrv = backendSrv;
                     _this.dashboardList = [];
                     _this.windowLocation = $location;
                     // Check for browser session storage and create one if it doesn't exist
-                    if (!sessionStorage.getItem("dashlist")) {
+                    if (!sessionStorage.getItem("dashlist") || _this.panel.isRootDashboard) {
                         sessionStorage.setItem("dashlist", "[]");
                     }
                     // Check if URL params has breadcrumb
@@ -100,8 +106,8 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                     // recreate dashboard list
                     window.onpopstate = function (event) {
                         if (_this.dashboardList.length > 0) {
-                            if ($location.search().breadcrumb) {
-                                var _items = $location.search().breadcrumb.split(",");
+                            if ($location.state().breadcrumb) {
+                                var _items = $location.state().breadcrumb.split(",");
                                 _this.createDashboardList(_items);
                             }
                         }
@@ -109,45 +115,66 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                     return _this;
                 }
                 /**
-                 * Create dashboard items
-                 * @param {string[]} items Array of dashboard ids
+                 * Callback for showing panel editor template
                  */
 
 
                 _createClass(BreadcrumbCtrl, [{
+                    key: "onInitEditMode",
+                    value: function onInitEditMode() {
+                        this.addEditorTab('Options', 'public/plugins/breadcrumb/editor.html', 2);
+                    }
+                }, {
                     key: "createDashboardList",
                     value: function createDashboardList(items) {
                         var _this2 = this;
 
-                        var dashIds = impressions.getDashboardOpened();
-                        var orgId = this.windowLocation.search()["orgId"];
-                        // Fetch list of all dashboards from Grafana
-                        this.backendSrv.search({ dashboardIds: dashIds, limit: this.panel.limit }).then(function (result) {
-                            _this2.dashboardList = items.filter(function (filterItem) {
-                                var isInDatabase = _.findIndex(result, { uri: "db/" + filterItem }) > -1;
-                                var isInFile = _.findIndex(result, { uri: "file/" + filterItem }) > -1;
-                                return isInDatabase || isInFile;
-                            }).map(function (item) {
-                                var dbSource = _.findIndex(result, { uri: "file/" + item }) > -1 ? "file" : "db";
-                                return {
-                                    url: "dashboard/" + dbSource + "/" + item,
-                                    name: _.find(result, { uri: dbSource + "/" + item }).title,
-                                    params: _this2.parseParamsString({ orgId: orgId })
-                                };
+                        if (this.allDashboards) {
+                            // Dashboard data has been loaeded from Grafana
+                            this.filterDashboardList(items, this.allDashboards);
+                        } else {
+                            // Fetch list of all dashboards from Grafana
+                            this.backendSrv.search().then(function (result) {
+                                _this2.filterDashboardList(items, result);
                             });
-                            // Update session storage
-                            sessionStorage.setItem("dashlist", JSON.stringify(_this2.dashboardList));
+                        }
+                    }
+                }, {
+                    key: "filterDashboardList",
+                    value: function filterDashboardList(DBlist, allDBs) {
+                        var _this3 = this;
+
+                        var orgId = this.windowLocation.search()["orgId"];
+                        this.dashboardList = DBlist.filter(function (filterItem) {
+                            var isInDatabase = _.findIndex(allDBs, function (dbItem) {
+                                return dbItem.url.indexOf("/d/" + filterItem) > -1;
+                            }) > -1;
+                            return isInDatabase;
+                        }).map(function (item) {
+                            var uid = _.find(allDBs, function (dbItem) {
+                                return dbItem.url.indexOf("/d/" + item) > -1;
+                            }).uid;
+                            return {
+                                url: "/d/" + uid,
+                                name: _.find(allDBs, function (dbItem) {
+                                    return dbItem.url.indexOf("/d/" + item) > -1;
+                                }).title,
+                                params: _this3.parseParamsString({ orgId: orgId }),
+                                uid: uid
+                            };
                         });
+                        // Update session storage
+                        sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
                     }
                 }, {
                     key: "parseBreadcrumbForUrl",
                     value: function parseBreadcrumbForUrl() {
-                        var _this3 = this;
+                        var _this4 = this;
 
                         var parsedBreadcrumb = "";
                         this.dashboardList.map(function (item, index) {
                             parsedBreadcrumb += item.url.split("/").pop();
-                            if (index < _this3.dashboardList.length - 1) {
+                            if (index < _this4.dashboardList.length - 1) {
                                 parsedBreadcrumb += ",";
                             }
                         });
@@ -156,33 +183,47 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                 }, {
                     key: "updateText",
                     value: function updateText() {
-                        var _this4 = this;
+                        var _this5 = this;
 
-                        var dashIds = impressions.getDashboardOpened();
-                        var queryParams = window.location.search;
+                        // Get Grafana query params
+                        var grafanaQueryParams = "";
+                        Object.keys(this.windowLocation.search()).map(function (param) {
+                            if (_this5.windowLocation.search()[param] && _this5.windowLocation.search()[param] !== "null") {
+                                grafanaQueryParams += "&" + param + "=" + _this5.windowLocation.search()[param];
+                            }
+                        });
                         // Fetch list of all dashboards from Grafana
-                        this.backendSrv.search({ dashboardIds: dashIds, limit: this.panel.limit }).then(function (result) {
+                        this.backendSrv.search().then(function (result) {
+                            _this5.allDashboards = result;
                             // Set current dashboard
-                            _this4.currentDashboard = window.location.pathname.split("/").pop();
-                            var dbSource = window.location.pathname.indexOf("/file/") > -1 ? "file" : "db";
-                            var uri = dbSource + "/" + _this4.currentDashboard;
-                            var obj = _.find(result, { uri: uri });
+                            var path = window.location.pathname.split("/");
+                            _this5.currentDashboard = path.pop();
+                            var dbSource = "/d/" + path.pop();
+                            var uri = "" + dbSource;
+                            var obj = _.find(result, function (dbItem) {
+                                return dbItem.url.indexOf("" + uri) > -1;
+                            });
                             // Add current dashboard to breadcrumb if it doesn't exist
-                            if (_.findIndex(_this4.dashboardList, { url: "dashboard/" + uri }) < 0 && obj) {
-                                _this4.dashboardList.push({ url: "dashboard/" + uri, name: obj.title, params: queryParams });
+                            if (_.findIndex(_this5.dashboardList, function (dbItem) {
+                                return dbItem.url.indexOf("" + uri) > -1;
+                            }) < 0 && obj) {
+                                _this5.dashboardList.push({ url: uri, name: obj.title, params: grafanaQueryParams, uid: obj.uid });
                             }
                             // Update session storage
-                            sessionStorage.setItem("dashlist", JSON.stringify(_this4.dashboardList));
+                            sessionStorage.setItem("dashlist", JSON.stringify(_this5.dashboardList));
                             // Parse modified breadcrumb and set it to url query params
-                            var parsedBreadcrumb = _this4.parseBreadcrumbForUrl();
-                            _this4.windowLocation.search('breadcrumb', parsedBreadcrumb).replace();
+                            var parsedBreadcrumb = _this5.parseBreadcrumbForUrl();
+                            var queryObject = _this5.parseParamsObject(grafanaQueryParams);
+                            queryObject["breadcrumb"] = parsedBreadcrumb;
+                            _this5.windowLocation.state(queryObject).replace();
+                            history.replaceState(queryObject, "");
                         });
                     }
                 }, {
                     key: "parseParamsObject",
                     value: function parseParamsObject(params) {
                         var paramsObj = {};
-                        if (params.charAt(0) === "?") {
+                        if (params.charAt(0) === "?" || params.charAt(0) === "&") {
                             params = params.substr(1, params.length);
                         }
                         var paramsArray = params.split("&");
@@ -209,7 +250,9 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                     value: function navigate(url, params) {
                         // Check if user is navigating backwards in breadcrumb and
                         // remove all items that follow the selected item in that case
-                        var index = _.findIndex(this.dashboardList, { url: url });
+                        var index = _.findIndex(this.dashboardList, function (dbItem) {
+                            return dbItem.url.indexOf("" + url) > -1;
+                        });
                         if (index > -1 && this.dashboardList.length >= index + 2) {
                             this.dashboardList.splice(index + 1, this.dashboardList.length - index - 1);
                             sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
@@ -218,8 +261,11 @@ System.register(["lodash", "app/plugins/sdk", "app/features/dashboard/impression
                         var queryParams = this.parseParamsObject(params);
                         // Delete possible breadcrumb param so that breadcrumb from session will be used instead
                         delete queryParams["breadcrumb"];
-                        // Check url root assuming that Grafana dashboard url has string "dashboard/db/"
-                        var urlRoot = window.location.href.substr(0, window.location.href.indexOf("dashboard/db/"));
+                        // Check url root assuming that Grafana dashboard url has string "/d/"
+                        var urlRoot = window.location.href.substr(0, window.location.href.indexOf("/d/") + 1);
+                        if (url.charAt(0) != "/") {
+                            urlRoot += "/";
+                        }
                         // Set new url and notify parent window
                         window.location.href = urlRoot + url + this.parseParamsString(queryParams);
                     }

@@ -50,7 +50,8 @@ module.exports = function(grunt) {
                     }
                 },
                 files: {
-                    'dist/module.html': 'src/module.pug'
+                    'dist/module.html': 'src/module.pug',
+                    'dist/editor.html': 'src/editor.pug'
                 }
             }
         },
