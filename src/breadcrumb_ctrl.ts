@@ -92,7 +92,7 @@ class BreadcrumbCtrl extends PanelCtrl {
      * Callback for showing panel editor template
      */
     onInitEditMode() {
-        this.addEditorTab('Options', 'public/plugins/breadcrumb/editor.html', 2);
+        this.addEditorTab('Options', 'public/plugins/digiapulssi-breadcrumb-panel/editor.html', 2);
     }
 
     /**
