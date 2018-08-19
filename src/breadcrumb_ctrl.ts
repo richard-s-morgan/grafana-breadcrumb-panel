@@ -54,7 +54,6 @@ class BreadcrumbCtrl extends PanelCtrl {
     constructor($scope: IBreadcrumbScope, $injector: ng.auto.IInjectorService, $location: ng.ILocationService, backendSrv: any) {
         super($scope, $injector);
         panelDefaults.isRootDashboard = false;
-        this.panel.title = 'Breadcrumb Panel';
         _.defaults(this.panel, panelDefaults);
         this.events.on('init-edit-mode', this.onInitEditMode.bind(this));
         // Init variables
