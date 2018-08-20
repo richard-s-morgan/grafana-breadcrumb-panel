@@ -122,7 +122,7 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                 _createClass(BreadcrumbCtrl, [{
                     key: "onInitEditMode",
                     value: function onInitEditMode() {
-                        this.addEditorTab('Options', 'public/plugins/breadcrumb/editor.html', 2);
+                        this.addEditorTab('Options', 'public/plugins/digiapulssi-breadcrumb-panel/editor.html', 2);
                     }
                 }, {
                     key: "createDashboardList",
