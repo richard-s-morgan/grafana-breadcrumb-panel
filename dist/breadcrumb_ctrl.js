@@ -80,7 +80,6 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                     var _this = _possibleConstructorReturn(this, (BreadcrumbCtrl.__proto__ || Object.getPrototypeOf(BreadcrumbCtrl)).call(this, $scope, $injector));
 
                     panelDefaults.isRootDashboard = false;
-                    _this.panel.title = 'Breadcrumb Panel';
                     _.defaults(_this.panel, panelDefaults);
                     _this.events.on('init-edit-mode', _this.onInitEditMode.bind(_this));
                     // Init variables
