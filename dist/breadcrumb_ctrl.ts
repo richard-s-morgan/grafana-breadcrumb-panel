@@ -29,6 +29,7 @@ export interface dashboardListItem {
     name: string;
     params: string;
     uid: string;
+    fullUrl: string;
 }
 
 const panelDefaults = {
@@ -117,6 +118,7 @@ class BreadcrumbCtrl extends PanelCtrl {
       */
      filterDashboardList(DBlist: string[], allDBs: any) {
          var orgId = this.windowLocation.search()["orgId"];
+         var urlRoot = window.location.href.substr(0, window.location.href.indexOf("/d/") + 1);
          this.dashboardList = DBlist.filter((filterItem: string) => {
              const isInDatabase = _.findIndex(allDBs, (dbItem) => dbItem.url.indexOf(`/d/${filterItem}`) > -1) > -1;
              return (isInDatabase);
@@ -127,7 +129,8 @@ class BreadcrumbCtrl extends PanelCtrl {
                  url: `/d/${uid}`,
                  name: _.find(allDBs, (dbItem) => dbItem.url.indexOf(`/d/${item}`) > -1).title,
                  params: this.parseParamsString({ orgId }),
-                 uid
+                 uid,
+                 fullUrl: urlRoot + '/d/' + uid + this.parseParamsString({ orgId })
              }
          });
          // Update session storage
@@ -171,7 +174,8 @@ class BreadcrumbCtrl extends PanelCtrl {
            var obj: any = _.find(result, (dbItem) => dbItem.url.indexOf(`${uri}`) > -1);
            // Add current dashboard to breadcrumb if it doesn't exist
            if (_.findIndex(this.dashboardList, (dbItem) => dbItem.url.indexOf(`${uri}`) > -1) < 0 && obj) {
-               this.dashboardList.push( { url: uri, name: obj.title, params: grafanaQueryParams, uid: obj.uid } );
+               this.dashboardList.push( { url: uri, name: obj.title, params: grafanaQueryParams, uid: obj.uid,
+                  fullUrl: window.location.href } );
            }
            // Update session storage
            sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
@@ -239,8 +243,6 @@ class BreadcrumbCtrl extends PanelCtrl {
        if (url.charAt(0) != "/") {
            urlRoot += "/";
        }
-       // Set new url and notify parent window
-       window.location.href = urlRoot + url + this.parseParamsString(queryParams);
     }
 
 }

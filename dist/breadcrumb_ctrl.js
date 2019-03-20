@@ -144,6 +144,7 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                         var _this3 = this;
 
                         var orgId = this.windowLocation.search()["orgId"];
+                        var urlRoot = window.location.href.substr(0, window.location.href.indexOf("/d/") + 1);
                         this.dashboardList = DBlist.filter(function (filterItem) {
                             var isInDatabase = _.findIndex(allDBs, function (dbItem) {
                                 return dbItem.url.indexOf("/d/" + filterItem) > -1;
@@ -159,7 +160,8 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                                     return dbItem.url.indexOf("/d/" + item) > -1;
                                 }).title,
                                 params: _this3.parseParamsString({ orgId: orgId }),
-                                uid: uid
+                                uid: uid,
+                                fullUrl: urlRoot + '/d/' + uid + _this3.parseParamsString({ orgId: orgId })
                             };
                         });
                         // Update session storage
@@ -206,7 +208,8 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                             if (_.findIndex(_this5.dashboardList, function (dbItem) {
                                 return dbItem.url.indexOf("" + uri) > -1;
                             }) < 0 && obj) {
-                                _this5.dashboardList.push({ url: uri, name: obj.title, params: grafanaQueryParams, uid: obj.uid });
+                                _this5.dashboardList.push({ url: uri, name: obj.title, params: grafanaQueryParams, uid: obj.uid,
+                                    fullUrl: window.location.href });
                             }
                             // Update session storage
                             sessionStorage.setItem("dashlist", JSON.stringify(_this5.dashboardList));
@@ -265,8 +268,6 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                         if (url.charAt(0) != "/") {
                             urlRoot += "/";
                         }
-                        // Set new url and notify parent window
-                        window.location.href = urlRoot + url + this.parseParamsString(queryParams);
                     }
                 }]);
 
