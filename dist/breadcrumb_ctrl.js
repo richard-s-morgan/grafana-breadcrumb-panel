@@ -61,7 +61,9 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
             }();
 
             panelDefaults = {
-                isRootDashboard: false
+                isRootDashboard: false,
+                hideTextInRootDashboard: false,
+                breadcrumbItemsMaxAmount: 25
             };
 
             _export("PanelCtrl", _export("BreadcrumbCtrl", BreadcrumbCtrl = function (_PanelCtrl) {
@@ -80,6 +82,8 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                     var _this = _possibleConstructorReturn(this, (BreadcrumbCtrl.__proto__ || Object.getPrototypeOf(BreadcrumbCtrl)).call(this, $scope, $injector));
 
                     panelDefaults.isRootDashboard = false;
+                    panelDefaults.hideTextInRootDashboard = false;
+                    panelDefaults.breadcrumbItemsMaxAmount = 25;
                     _.defaults(_this.panel, panelDefaults);
                     _this.events.on('init-edit-mode', _this.onInitEditMode.bind(_this));
                     // Init variables
@@ -210,6 +214,11 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                             }) < 0 && obj) {
                                 _this5.dashboardList.push({ url: uri, name: obj.title, params: grafanaQueryParams, uid: obj.uid,
                                     fullUrl: window.location.href });
+                            }
+                            // If the amount of items exceeds the maximum then remove oldest item
+                            var breadcrumbItemsMaxAmount = parseInt(_this5.panel.breadcrumbItemsMaxAmount, 10);
+                            if (!isNaN(breadcrumbItemsMaxAmount) && _this5.dashboardList.length > breadcrumbItemsMaxAmount) {
+                                _this5.dashboardList.shift();
                             }
                             // Update session storage
                             sessionStorage.setItem("dashlist", JSON.stringify(_this5.dashboardList));

@@ -1,4 +1,4 @@
-ol.breadcrumb-container
+ol(ng-hide="ctrl.panel.hideTextInRootDashboard").breadcrumb-container
   li(ng-repeat="dashboard in ctrl.dashboardList track by $index")
     a(ng-href="{{ dashboard.fullUrl }}" ng-click="navigate(dashboard.url, dashboard.params)") {{ dashboard.name }}
     svg(height="10" viewBox="0 0 10 10" width="10" xmlns="http://www.w3.org/2000/svg")

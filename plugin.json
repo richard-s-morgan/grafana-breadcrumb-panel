@@ -9,8 +9,8 @@
             "name": "Digia Finland Ltd"
         },
         "keywords": ["breadcrumb", "panel"],
-        "version": "1.1.5",
-        "updated": "2019-03-20",
+        "version": "1.1.6",
+        "updated": "2019-10-07",
         "logos": {
             "small": "src/img/breadcrumb-icon.svg",
             "large": "src/img/breadcrumb-icon.svg"
@@ -23,7 +23,7 @@
         ]
     },
     "dependencies": {
-        "grafanaVersion": "5.x.x",
+        "grafanaVersion": "6.x.x",
         "plugins": [ ]
     }
 }

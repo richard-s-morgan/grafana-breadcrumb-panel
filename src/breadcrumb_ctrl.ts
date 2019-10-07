@@ -33,7 +33,9 @@ export interface dashboardListItem {
 }
 
 const panelDefaults = {
-    isRootDashboard: false
+    isRootDashboard: false,
+    hideTextInRootDashboard: false,
+    breadcrumbItemsMaxAmount: 25
 };
 
 class BreadcrumbCtrl extends PanelCtrl {
@@ -55,6 +57,8 @@ class BreadcrumbCtrl extends PanelCtrl {
     constructor($scope: IBreadcrumbScope, $injector: ng.auto.IInjectorService, $location: ng.ILocationService, backendSrv: any) {
         super($scope, $injector);
         panelDefaults.isRootDashboard = false;
+        panelDefaults.hideTextInRootDashboard = false;
+        panelDefaults.breadcrumbItemsMaxAmount = 25;
         _.defaults(this.panel, panelDefaults);
         this.events.on('init-edit-mode', this.onInitEditMode.bind(this));
         // Init variables
@@ -176,6 +180,11 @@ class BreadcrumbCtrl extends PanelCtrl {
            if (_.findIndex(this.dashboardList, (dbItem) => dbItem.url.indexOf(`${uri}`) > -1) < 0 && obj) {
                this.dashboardList.push( { url: uri, name: obj.title, params: grafanaQueryParams, uid: obj.uid,
                   fullUrl: window.location.href } );
+           }
+           // If the amount of items exceeds the maximum then remove oldest item
+           const breadcrumbItemsMaxAmount = parseInt(this.panel.breadcrumbItemsMaxAmount, 10);
+           if (!isNaN(breadcrumbItemsMaxAmount) && this.dashboardList.length > breadcrumbItemsMaxAmount) {
+               this.dashboardList.shift();
            }
            // Update session storage
            sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
