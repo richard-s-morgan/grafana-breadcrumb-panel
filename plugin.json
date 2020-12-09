@@ -1,29 +1,32 @@
 {
-    "type": "panel",
-    "name": "Breadcrumb",
-    "id": "digiapulssi-breadcrumb-panel",
+  "type": "panel",
+  "name": "Breadcrumb",
+  "id": "digiapulssi-breadcrumb-panel",
 
-    "info": {
-        "description": "Breadcrumb Panel for Grafana",
-        "author": {
-            "name": "Digia Finland Ltd"
-        },
-        "keywords": ["breadcrumb", "panel"],
-        "version": "1.1.6",
-        "updated": "2019-10-07",
-        "logos": {
-            "small": "src/img/breadcrumb-icon.svg",
-            "large": "src/img/breadcrumb-icon.svg"
-        },
-        "links": [
-            {"name": "Project site", "url": "https://github.com/digiapulssi/grafana-breadcrumb-panel"}
-        ],
-        "screenshots": [
-            {"name": "Showcase", "path": "src/img/breadcrumb-screenshot.png"}
-        ]
+  "info": {
+    "description": "Persistant Breadcrumb Panel for Grafana",
+    "author": {
+      "name": "Richard Morgan"
     },
-    "dependencies": {
-        "grafanaVersion": "6.x.x",
-        "plugins": [ ]
-    }
+    "keywords": ["breadcrumb", "panel"],
+    "version": "2.0.1",
+    "updated": "2021-01-19",
+    "logos": {
+      "small": "src/img/breadcrumb-icon.svg",
+      "large": "src/img/breadcrumb-icon.svg"
+    },
+    "links": [
+      {
+        "name": "Project site",
+        "url": "https://github.com/richard-s-morgan/grafana-breadcrumb-panel"
+      }
+    ],
+    "screenshots": [
+      { "name": "Showcase", "path": "src/img/breadcrumb-screenshot.png" }
+    ]
+  },
+  "dependencies": {
+    "grafanaVersion": "6.x.x",
+    "plugins": []
+  }
 }

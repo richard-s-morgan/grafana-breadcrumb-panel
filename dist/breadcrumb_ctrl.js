@@ -85,9 +85,13 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                     panelDefaults.hideTextInRootDashboard = false;
                     panelDefaults.breadcrumbItemsMaxAmount = 25;
                     _.defaults(_this.panel, panelDefaults);
-                    _this.events.on('init-edit-mode', _this.onInitEditMode.bind(_this));
+                    $scope.$on("$locationChangeSuccess", function (event, newUrl, oldUrl) {
+                        $scope.upText();
+                    });
+                    _this.events.on("init-edit-mode", _this.onInitEditMode.bind(_this));
                     // Init variables
                     $scope.navigate = _this.navigate.bind(_this);
+                    $scope.upText = _this.updateText.bind(_this);
                     _this.backendSrv = backendSrv;
                     _this.dashboardList = [];
                     _this.windowLocation = $location;
@@ -125,13 +129,14 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                 _createClass(BreadcrumbCtrl, [{
                     key: "onInitEditMode",
                     value: function onInitEditMode() {
-                        this.addEditorTab('Options', 'public/plugins/digiapulssi-breadcrumb-panel/editor.html', 2);
+                        this.addEditorTab("Options", "public/plugins/digiapulssi-breadcrumb-panel/editor.html", 2);
                     }
                 }, {
                     key: "createDashboardList",
                     value: function createDashboardList(items) {
                         var _this2 = this;
 
+                        // console.log("BC: createDashboardList: " + items);
                         if (this.allDashboards) {
                             // Dashboard data has been loaeded from Grafana
                             this.filterDashboardList(items, this.allDashboards);
@@ -165,10 +170,14 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                                 }).title,
                                 params: _this3.parseParamsString({ orgId: orgId }),
                                 uid: uid,
-                                fullUrl: urlRoot + '/d/' + uid + _this3.parseParamsString({ orgId: orgId })
+                                fullUrl: urlRoot + "/d/" + uid + _this3.parseParamsString({ orgId: orgId })
                             };
                         });
                         // Update session storage
+                        // console.log(
+                        //   "BC: Storing dashlist in filterDashboardList: " +
+                        //     JSON.stringify(this.dashboardList)
+                        // );
                         sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
                     }
                 }, {
@@ -183,7 +192,36 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                                 parsedBreadcrumb += ",";
                             }
                         });
+                        // console.log("BC: parsedBreadcrumb: " + parsedBreadcrumb);
                         return parsedBreadcrumb;
+                    }
+                }, {
+                    key: "removeURLParameter",
+                    value: function removeURLParameter(url, parameter) {
+                        //prefer to use l.search if you have a location/link object
+                        // console.log(
+                        //   "BC: Start of removeURLParameter: " + url + " --- " + parameter
+                        // );
+                        var urlparts = url.split("?");
+                        if (urlparts.length >= 2) {
+                            var prefix = encodeURIComponent(parameter) + "=";
+                            var pars = urlparts[1].split(/[&;]/g);
+                            //reverse iteration as may be destructive
+                            for (var i = pars.length; i-- > 0;) {
+                                //idiom for string.startsWith
+                                if (pars[i].lastIndexOf(prefix, 0) !== -1) {
+                                    pars.splice(i, 1);
+                                }
+                            }
+                            // console.log(
+                            //   "BC: Return of parts removeURLParameter: " +
+                            //     urlparts[0] +
+                            //     (pars.length > 0 ? "?" + pars.join("&") : "")
+                            // );
+                            return urlparts[0] + (pars.length > 0 ? "?" + pars.join("&") : "");
+                        }
+                        // console.log("BC: Final return of removeURLParameter: " + url);
+                        return url;
                     }
                 }, {
                     key: "updateText",
@@ -193,9 +231,11 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                         // Get Grafana query params
                         var grafanaQueryParams = "";
                         Object.keys(this.windowLocation.search()).map(function (param) {
-                            if (_this5.windowLocation.search()[param] && _this5.windowLocation.search()[param] !== "null") {
-                                grafanaQueryParams += "&" + param + "=" + _this5.windowLocation.search()[param];
-                            }
+                            // console.log("BC: updateText: " + param);
+                            if (_this5.windowLocation.search()[param] && _this5.windowLocation.search()[param] !== "null" && param !== "var-UserName" // ignore this
+                            ) {
+                                    grafanaQueryParams += "&" + param + "=" + _this5.windowLocation.search()[param];
+                                }
                         });
                         // Fetch list of all dashboards from Grafana
                         this.backendSrv.search().then(function (result) {
@@ -212,8 +252,24 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                             if (_.findIndex(_this5.dashboardList, function (dbItem) {
                                 return dbItem.url.indexOf("" + uri) > -1;
                             }) < 0 && obj) {
-                                _this5.dashboardList.push({ url: uri, name: obj.title, params: grafanaQueryParams, uid: obj.uid,
-                                    fullUrl: window.location.href });
+                                _this5.dashboardList.push({
+                                    url: uri,
+                                    name: obj.title,
+                                    params: grafanaQueryParams,
+                                    uid: obj.uid,
+                                    fullUrl: _this5.removeURLParameter(window.location.href, "var-UserName")
+                                });
+                            } else {
+                                var dashIndex = _.findIndex(_this5.dashboardList, function (dbItem) {
+                                    return dbItem.url.indexOf("" + uri) > -1;
+                                });
+                                _this5.dashboardList[dashIndex] = {
+                                    url: uri,
+                                    name: obj.title,
+                                    params: grafanaQueryParams,
+                                    uid: obj.uid,
+                                    fullUrl: _this5.removeURLParameter(window.location.href, "var-UserName")
+                                };
                             }
                             // If the amount of items exceeds the maximum then remove oldest item
                             var breadcrumbItemsMaxAmount = parseInt(_this5.panel.breadcrumbItemsMaxAmount, 10);
@@ -221,6 +277,10 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                                 _this5.dashboardList.shift();
                             }
                             // Update session storage
+                            // console.log(
+                            //   "BC: Storing dashlist in updateText: " +
+                            //     JSON.stringify(this.dashboardList)
+                            // );
                             sessionStorage.setItem("dashlist", JSON.stringify(_this5.dashboardList));
                             // Parse modified breadcrumb and set it to url query params
                             var parsedBreadcrumb = _this5.parseBreadcrumbForUrl();
@@ -266,6 +326,10 @@ System.register(["lodash", "app/plugins/sdk", "./breadcrumb.css!"], function (_e
                         });
                         if (index > -1 && this.dashboardList.length >= index + 2) {
                             this.dashboardList.splice(index + 1, this.dashboardList.length - index - 1);
+                            // console.log(
+                            //   "BC: Storing dashlist in navigate: " +
+                            //     JSON.stringify(this.dashboardList)
+                            // );
                             sessionStorage.setItem("dashlist", JSON.stringify(this.dashboardList));
                         }
                         // Parse params string to object
